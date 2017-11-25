@@ -7,23 +7,31 @@
 #include <random>
 #include <vector>
 
+#include "base_layer/base_layer.hpp"
+
 class aim_ai : public aiwc::ai_base {
     static constexpr double PI = 3.1415926535;
 
 public:
     // Constructor
-    aim_ai(std::string server_ip, std::size_t port, std::string realm, std::string key, std::string datapath, bool is_debug)
+    aim_ai(std::string server_ip, std::size_t port, std::string realm, std::string key, std::string datapath, bool is_debug=false)
         : aiwc::ai_base(std::move(server_ip), port, std::move(realm), std::move(key), std::move(datapath))
         , robot_wheels{}
     {
         this->is_debug = is_debug;
-        std::cout << "I am ready." << std::endl;
+		layer = new aim::base_layer(is_debug=true);
+		if (is_debug) {
+			std::cout << "I am ready." << std::endl;
+		}
+
     }
 
 private:
 	// implement parent virtual methods
 	void init() {
-		std::cout << "AIM AI has been initilized"<<std::endl;
+		if (is_debug) {
+			std::cout << "AIM AI has been initilized" << std::endl;
+		}
 	}
 
 	// member methods
@@ -53,97 +61,6 @@ private:
 		const std::array<double, 2> pos_ball = { (*f.opt_coordinates).ball.x, (*f.opt_coordinates).ball.y };
 		return pos_ball;
 	}
-
-
-    double d2r(double deg) {
-        //convert degree to radian
-
-        return deg * PI / 180;
-    }
-
-    double r2d(double rad) {
-        // Convert radian to degree
-
-        return rad * 180 / PI;
-    }
-
-    double dist(double x1, double y1, double x2, double y2) {
-        // compute distance between x and y
-
-        const double dx = x1 - x2;
-        const double dy = y1 - y2;
-        return std::sqrt(dx * dx + dy * dy);
-    }
-
-	void velocity(std::size_t id, double l, double r){
-		// set velocity for left and right wheel of robot id
-
-        if (l > info.max_linear_velocity || l < -info.max_linear_velocity) {
-            const double ratio = l / info.max_linear_velocity;
-            l /= ratio;
-            r /= ratio;
-        }
-
-        robot_wheels[id] = {l, r};
-    }
-
-    void position(std::size_t id, double x, double y, double damping = 0.35)
-    {
-        std::cout<<"check 1";
-        const double mult_lin = 2;
-        const double mult_ang = 0.2;
-
-        const double dx = x - this->our_postures[id][X];
-        const double dy = y - this->our_postures[id][Y];
-
-        const double d_e = std::sqrt(dx * dx + dy * dy);
-
-        const double desired_th = (dx == 0 && dy == 0) ? (PI / 2) : std::atan2(dy, dx);
-
-        double d_th = desired_th - this->our_postures[id][TH];
-        while (d_th > PI) d_th -= 2 * PI;
-        while (d_th < -PI) d_th += 2 * PI;
-
-        double ka;
-        if (d_e > 1) {        ka = 17; }
-        else if (d_e > 0.5) { ka = 19; }
-        else if (d_e > 0.3) { ka = 21; }
-        else if (d_e > 0.2) { ka = 23; }
-        else               { ka = 25; }
-        ka /= 90;
-
-        int sign = 1;
-
-        if (d_th > d2r(95)) {
-            d_th -= PI;
-            sign = -1;
-        }
-        else if (d_th < d2r(-95)) {
-            d_th += PI;
-            sign = -1;
-        }
-
-        if (std::abs(d_th) > d2r(85)) {
-            velocity(id, -mult_ang * d_th, mult_ang * d_th);
-        }
-        else {
-            if (d_e < 5.0 && abs(d_th) < d2r(40)) {
-                ka = 0.1;
-            }
-            ka *= 4;
-            velocity(id,
-                     sign * (mult_lin * (1 / (1 + std::exp(-3 * d_e)) - damping) - mult_ang * ka * d_th),
-                     sign * (mult_lin * (1 / (1 + std::exp(-3 * d_e)) - damping) + mult_ang * ka * d_th));
-        }
-    }
-
-    void spin(std::size_t id){
-        // spin robot id
-        double v = 0.235619;
-        double l = v;
-        double r = -v;
-        robot_wheels[id] = {l, r};
-    }
 
     void update(const aiwc::frame& f)
     {
@@ -187,14 +104,23 @@ private:
              ****************************************/
 
 
-            if(this->count<18){
+            /*if(this->count<18){
 				this->spin(1);
             }
             else{
                 robot_wheels[1] = {0, 0};
-            }
-            this->count++;
+            }*/
+            // this->count++;
+            // double cur_th = this->our_postures[1][TH];
+            // double err = PI/2 - cur_th;
+            // double v = this->spin_pid->control(err);
+            // this->spin(1, v);
+
+            std::array<double, 2> wheel_velos = layer->spin_to_theta(this->our_postures[1][TH], -PI/6);
+            robot_wheels[1] = wheel_velos;
+
 			std::cout << this->count << "theta " << this->our_postures[1][TH] << std::endl;
+
             //this->position(1, 0.2, 0.4, 0.45);
             
 
@@ -267,7 +193,7 @@ private: // member variable
     int count = 0; //test
     double last = 0;
 	bool is_debug = true;
-
+    aim::base_layer *layer;
 };
 
 int main(int argc, char *argv[])
@@ -283,8 +209,8 @@ int main(int argc, char *argv[])
     const auto& key       = std::string(argv[4]);
     const auto& datapath  = std::string(argv[5]);
 
-    bool is_debug = true;
-    aim_ai ai(server_ip, port, realm, key, datapath, is_debug);
+
+    aim_ai ai(server_ip, port, realm, key, datapath, true);
 
     ai.run();
 
