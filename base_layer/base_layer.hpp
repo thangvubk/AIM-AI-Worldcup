@@ -17,17 +17,46 @@ class base_layer {
 public:
     base_layer(bool is_debug = false);
     ~base_layer();
+
+	double d2r(double deg);
+	
+	double r2d(double rad);
+
+    double get_distance(const double x1, const double x2, const double y1, const double y2);
+
+    double get_distance(const std::array<double, 2> current, 
+                        const std::array<double, 2> target);
+
+    double get_distance(const std::array<double, 3> cur_posture, 
+                        const std::array<double, 3> tar_posture);
+
+    double compute_static_theta(const std::array<double, 2> current, 
+                                const std::array<double, 2> target);
+
+    double compute_theta_to_target(const std::array<double, 3> cur_posture,
+                                   const std::array<double, 2> target);
+
     std::array<double, 2> spin_to_theta(double cur_th, double tar_th);
+
     std::array<double, 2> move_to_target(const std::array<double, 3> cur_posture,
                                          const std::array<double, 2> target,
                                          const double damping = 0.45);
+
+    std::array<double, 2> three_phase_move_to_target(const std::array<double, 3> cur_posture,
+                                                     const std::array<double, 3> tar_posture,
+                                                     const double damping = 0.45);
 
 
 
 private:
     bool is_debug;
     pid_ctrler *spin_ctrl;
-    //std::array<double, 2> wheel_velos; // left and right velocity
+    std::size_t cur_phase; 
+
+    // Constants
+    static const double PI;
+    static const double TH_TOLERANCE;
+    static const double DIST_TOLERANCE;
 };
 }
 

@@ -103,25 +103,13 @@ private:
              * OUR ALGORITHM HERE
              ****************************************/
 
-
-            /*if(this->count<18){
-				this->spin(1);
-            }
-            else{
-                robot_wheels[1] = {0, 0};
-            }*/
-            // this->count++;
-            // double cur_th = this->our_postures[1][TH];
-            // double err = PI/2 - cur_th;
-            // double v = this->spin_pid->control(err);
-            // this->spin(1, v);
-
-            std::array<double, 2> wheel_velos = layer->spin_to_theta(this->our_postures[1][TH], -PI/6);
+            std::array<double, 2> wheel_velos;
+            std::array<double, 3> tar_posture = {0, -0.4, PI/3};
+            
+            wheel_velos = layer->three_phase_move_to_target(this->our_postures[1], tar_posture);
             robot_wheels[1] = wheel_velos;
-
 			std::cout << this->count << "theta " << this->our_postures[1][TH] << std::endl;
 
-            //this->position(1, 0.2, 0.4, 0.45);
             
 
 
@@ -194,6 +182,7 @@ private: // member variable
     double last = 0;
 	bool is_debug = true;
     aim::base_layer *layer;
+    std::size_t phase = 1;
 };
 
 int main(int argc, char *argv[])
