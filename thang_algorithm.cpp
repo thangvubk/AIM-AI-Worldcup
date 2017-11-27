@@ -108,7 +108,7 @@ private:
             
             wheel_velos = layer->three_phase_move_to_target(this->our_postures[1], tar_posture);
             robot_wheels[1] = wheel_velos;
-			std::cout << this->count << "theta " << this->our_postures[1][TH] << std::endl;
+            std::cout << this->count << "theta " << this->our_postures[1][TH] << std::endl;
 
             
 

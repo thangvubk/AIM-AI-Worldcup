@@ -51,6 +51,13 @@ private:
         robot_wheels[id] = {l, r};
     }
 
+    // thang vu
+    void spin(std::size_t id){
+        double l = info.max_linear_velocity;
+        double r = -info.max_linear_velocity;
+        robot_wheels[id] = {l, r};
+    }
+
     void position(std::size_t id, double x, double y, double damping = 0.35)
     {
         const double mult_lin = 2;
@@ -111,7 +118,7 @@ private:
         const double y = std::max(std::min(cur_ball[Y],
                                            info.goal[Y] / 2 - info.robot_size / 2),
                                   -info.goal[Y] / 2 + info.robot_size / 2);
-        std::cout << "Target Pos: " << x << "," << y << std::endl;
+        //std::cout << "Target Pos: " << x << "," << y << std::endl;
         position(id, x, y);
     }
 
@@ -258,11 +265,25 @@ private:
         int idx = find_closest_robot();
 
         // Robots Functions
-        goalie(4);
-        defend(3, idx, 0.2);
-        defend(2, idx, -0.2);
-        midfielder(1, idx, 0.15);
-        midfielder(0, idx, -0.15);
+        // goalie(4);
+        // defend(3, idx, 0.2);
+        // defend(2, idx, -0.2);
+        // midfielder(1, idx, 0.15);
+        // midfielder(0, idx, -0.15);
+        // if(count == 0){
+        //     std::cout<<"enter here"<<std::endl;
+        //     spin(1);
+        // }
+        // else{
+        //     //robot_wheels[1] = {0, 0};
+        //     position(1, 0.3, 0.4, 0.5);
+        // }
+        count += 1;
+        position(1, 0.2, 0.4, 0.45);
+
+        std::cout<<count<<std::endl;
+        std::cout<<cur_posture[1][TH]<<std::endl;
+
 
         prev_ball = cur_ball;
         previous_frame = f;
@@ -270,16 +291,16 @@ private:
         std::array<double, 10> ws;
 
         for (std::size_t id = 0; id < 5; ++id) {
-            std::cout << "Robot " << id << ":[" << robot_wheels[id][0] << "," << robot_wheels[id][1] << "]" << std::endl; //print robots info
+            //std::cout << "Robot " << id << ":[" << robot_wheels[id][0] << "," << robot_wheels[id][1] << "]" << std::endl; //print robots info
             ws[2 * id    ] = robot_wheels[id][0]; // left
             ws[2 * id + 1] = robot_wheels[id][1]; // right
         }
         set_wheel(ws); // this function is defined at ai_base.cpp
 
         for (const auto& w : ws) {
-            std::cout << w << ", "; //print wheels
+            //std::cout << w << ", "; //print wheels
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
 
     }
 
@@ -315,6 +336,9 @@ private: // member variable
     std::array<std::array<double, 2>, 5> robot_wheels;
 
     std::vector<aiwc::frame> frames;
+
+    // thangvu
+    int count = 0; //test
 };
 
 int main(int argc, char *argv[])
@@ -329,6 +353,9 @@ int main(int argc, char *argv[])
     const auto& realm     = std::string(argv[3]);
     const auto& key       = std::string(argv[4]);
     const auto& datapath  = std::string(argv[5]);
+
+    // thangvu
+    bool is_debug = true;
 
     my_ai ai(server_ip, port, realm, key, datapath);
 
