@@ -14,7 +14,7 @@ base_layer::base_layer(bool is_debug) {
     // Contructer
 
     this->is_debug = is_debug;
-    this->spin_ctrl = new pid_ctrler(0.25, 0.005, 0.01);
+    this->spin_ctrl = new pid_ctrler(0.25, 0.005, 0.01, 0.05, true);
     this->cur_phase = 0;
 
     if (is_debug) {
@@ -59,6 +59,26 @@ double base_layer::get_distance(const std::array<double, 3> cur_posture, const s
     const std::array<double, 2> target = {tar_posture[0], tar_posture[1]};
     const std::array<double, 2> current = {cur_posture[0], cur_posture[1]};
     return this->get_distance(current, target);
+}
+
+
+/**
+    check the different between cur_th and tar_th then normalize and compare with tolerance
+    return true if cur_th approxly equals tar_th else false
+*/
+bool base_layer::theta_equal_with_tolerance(const double cur_th, const double tar_th, const double tolerance) {
+    double d_th = cur_th - tar_th;
+    while (d_th > PI) d_th -= 2 * PI;
+    while (d_th < -PI) d_th += 2 * PI;
+
+    if (this->is_debug) {
+        std::cout << __func__ << ": (d_th, tolerance)" << d_th << " " << tolerance << std::endl;
+    }
+
+    if (std::abs(d_th) < tolerance) {
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -229,7 +249,7 @@ std::array<double, 2> base_layer::three_phase_move_to_target(std::array<double, 
 
         const double cur_th = cur_posture[2];
         // spin if current theta is different from target theta else switch to phase 2
-        if (std::abs(cur_th - static_th) > base_layer::TH_TOLERANCE) {
+        if (this->theta_equal_with_tolerance(cur_th, static_th, base_layer::TH_TOLERANCE) == false) {
             if (this->is_debug) {
                 std::cout << __func__ << ": Phase 0, spin" << std::endl;
             }
@@ -265,7 +285,7 @@ std::array<double, 2> base_layer::three_phase_move_to_target(std::array<double, 
     if (this->cur_phase == 2) {
         double cur_th = cur_posture[2];
         double tar_th = tar_posture[2];
-        if (std::abs(cur_th - tar_th) > base_layer::TH_TOLERANCE) {
+        if (this->theta_equal_with_tolerance(cur_th, tar_th, base_layer::TH_TOLERANCE) == false) {
             if (this->is_debug) {
                 std::cout << __func__ << ": Phase 2, spin" << std::endl;
             }
@@ -278,6 +298,15 @@ std::array<double, 2> base_layer::three_phase_move_to_target(std::array<double, 
     }
 
     return wheel_velos;
+}
+
+// getters setters
+std::size_t base_layer::get_cur_phase(){
+    return this->cur_phase;
+}
+
+void base_layer::set_cur_phase(std::size_t cur_phase){
+    this->cur_phase = cur_phase;
 }
 
 } //aim namespace

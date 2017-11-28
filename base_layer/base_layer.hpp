@@ -30,6 +30,9 @@ public:
     double get_distance(const std::array<double, 3> cur_posture, 
                         const std::array<double, 3> tar_posture);
 
+    bool theta_equal_with_tolerance(const double cur_th, const double tar_th,
+                                      const double tolerance);
+
     double compute_static_theta(const std::array<double, 2> current, 
                                 const std::array<double, 2> target);
 
