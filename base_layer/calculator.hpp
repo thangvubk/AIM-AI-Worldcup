@@ -4,19 +4,17 @@
     Discription: low-level function, control two wheels of a robots
 */
 
-#ifndef _BASE_LAYER_H
-#define _BASE_LAYER_H
+#ifndef _CALCULATOR_H
+#define _CALCULATOR_H
 
 #include <array>
 
-#include "pid_ctrler.hpp"
-
 namespace aim {
 
-class base_layer {
+class calculator {
 public:
-    base_layer(bool is_debug = false);
-    ~base_layer();
+    calculator(bool is_debug = false);
+    ~calculator();
 
 	double d2r(double deg);
 	
@@ -39,33 +37,20 @@ public:
     double compute_theta_to_target(const std::array<double, 3> cur_posture,
                                    const std::array<double, 2> target);
 
-    std::array<double, 2> spin_to_theta(double cur_th, double tar_th);
+	std::array<double, 3> compute_desired_posture(std::array<double, 2> ball_pstn,
+                                                  std::array<double, 2> goal_pstn);
 
-    std::array<double, 2> move_to_target(const std::array<double, 3> cur_posture,
-                                         const std::array<double, 2> target,
-                                         const double damping = 0.45);
-
-    std::array<double, 2> three_phase_move_to_target(const std::array<double, 3> cur_posture,
-                                                     const std::array<double, 3> tar_posture,
-                                                     const double damping = 0.45);
-
-    // getters and setters
-    std::size_t base_layer::get_cur_phase();
-
-    void base_layer::set_cur_phase(std::size_t cur_phase);
-
-
-
-private:
-    bool is_debug;
-    pid_ctrler *spin_ctrl;
-    std::size_t cur_phase; 
+    bool is_desired_posture(std::array<double, 3> cur_posture, 
+                            std::array<double, 3> tar_posture);
 
     // Constants
     static const double PI;
     static const double TH_TOLERANCE;
     static const double DIST_TOLERANCE;
+
+private:
+    bool is_debug; 
 };
 }
 
-#endif //_BASE_LAYER_H
+#endif //_CALCULATOR_H

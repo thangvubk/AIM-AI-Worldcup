@@ -9,8 +9,9 @@ find_package(Boost REQUIRED COMPONENTS random regex system thread) # VC require 
 
 add_executable(thang_algorithm 
     thang_algorithm.cpp 
-    base_layer/base_layer.cpp 
+    base_layer/motor.cpp 
     base_layer/pid_ctrler.cpp 
+    base_layer/calculator.cpp
     ../common/ai_base.cpp
     )
 
