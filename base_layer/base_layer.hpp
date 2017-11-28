@@ -49,6 +49,11 @@ public:
                                                      const std::array<double, 3> tar_posture,
                                                      const double damping = 0.45);
 
+    // getters and setters
+    std::size_t base_layer::get_cur_phase();
+
+    void base_layer::set_cur_phase(std::size_t cur_phase);
+
 
 
 private:
