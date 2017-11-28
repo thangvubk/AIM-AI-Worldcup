@@ -9,6 +9,7 @@
 
 #include "base_layer/motor.hpp"
 #include "base_layer/calculator.hpp"
+#include "data_processor/data_processor.hpp"
 
 class aim_ai : public aiwc::ai_base {
     static constexpr double PI = 3.1415926535;
@@ -22,10 +23,10 @@ public:
         this->is_debug = is_debug;
 		mt = new aim::motor("motor 1", true);
 		cal = new aim::calculator(false);
+        data_proc = new aim::data_processor(true);
 		if (is_debug) {
 			std::cout << "I am ready." << std::endl;
 		}
-
     }
 
 private:
@@ -37,32 +38,32 @@ private:
 	}
 
 	// member methods
-    const auto get_cur_postures(const aiwc::frame& f, std::size_t team){
-		// get current postures including x, y, th of team (ours or opponent)
-		// based on received frame
+ //    const auto get_cur_postures(const aiwc::frame& f, std::size_t team){
+	// 	// get current postures including x, y, th of team (ours or opponent)
+	// 	// based on received frame
 
-        std::array<std::array<double, 3>, 5> cur_postures;
-        for (std::size_t id = 0; id < 5; ++id) {
-            cur_postures[id][X]  = (*f.opt_coordinates).robots[team][id].x;
-            cur_postures[id][Y]  = (*f.opt_coordinates).robots[team][id].y;
-            cur_postures[id][TH] = (*f.opt_coordinates).robots[team][id].th;
-        }
+ //        std::array<std::array<double, 3>, 5> cur_postures;
+ //        for (std::size_t id = 0; id < 5; ++id) {
+ //            cur_postures[id][X]  = (*f.opt_coordinates).robots[team][id].x;
+ //            cur_postures[id][Y]  = (*f.opt_coordinates).robots[team][id].y;
+ //            cur_postures[id][TH] = (*f.opt_coordinates).robots[team][id].th;
+ //        }
 
-		return cur_postures;
-    }
+	// 	return cur_postures;
+ //    }
 
-    const auto get_my_team_postures(const aiwc::frame& f){
-        return this->get_cur_postures(f, MYTEAM);
-    }
+ //    const auto get_my_team_postures(const aiwc::frame& f){
+ //        return this->get_cur_postures(f, MYTEAM);
+ //    }
 
-	const auto get_opponent_postures(const aiwc::frame& f) {
-		return this->get_cur_postures(f, OPPONENT);
-	}
+	// const auto get_opponent_postures(const aiwc::frame& f) {
+	// 	return this->get_cur_postures(f, OPPONENT);
+	// }
 
-	const auto get_cur_ball_position(const aiwc::frame& f) {
-		const std::array<double, 2> pos_ball = { (*f.opt_coordinates).ball.x, (*f.opt_coordinates).ball.y };
-		return pos_ball;
-	}
+	// const auto get_cur_ball_position(const aiwc::frame& f) {
+	// 	const std::array<double, 2> pos_ball = { (*f.opt_coordinates).ball.x, (*f.opt_coordinates).ball.y };
+	// 	return pos_ball;
+	// }
 
     void update(const aiwc::frame& f)
     {
@@ -96,9 +97,9 @@ private:
             
 
 			// Get infos
-			this->our_postures = this->get_my_team_postures(f);
-			this->opnt_postures = this->get_opponent_postures(f);
-            this->cur_ball = this->get_cur_ball_position(f);
+			this->our_postures = data_proc->get_my_team_postures(f);
+			this->opnt_postures = data_proc->get_opponent_postures(f);
+            this->cur_ball = data_proc->get_cur_ball_position(f);
 
 
 
@@ -188,12 +189,11 @@ private: // member variable
     std::vector<aiwc::frame> frames;
 
     // thangvu
-    int count = 0; //test
-    double last = 0;
 	bool is_debug = true;
     aim::motor *mt;
 	aim::calculator *cal;
-    std::size_t phase = 1;
+    aim::data_processor *data_proc;
+
 };
 
 int main(int argc, char *argv[])

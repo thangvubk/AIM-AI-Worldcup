@@ -12,6 +12,7 @@ add_executable(thang_algorithm
     base_layer/motor.cpp 
     base_layer/pid_ctrler.cpp 
     base_layer/calculator.cpp
+    data_processor/data_processor.cpp
     ../common/ai_base.cpp
     )
 
