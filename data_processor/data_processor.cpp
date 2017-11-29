@@ -18,6 +18,9 @@ data_processor::~data_processor() {
 }
 
 void data_processor::update_cur_frame(const aiwc::frame& f){
+    if(this->is_first_frame_received == true){
+        this->prev_frame = this->cur_frame;
+    }
     this->cur_frame = f;
 }
 
@@ -57,14 +60,11 @@ const std::array<double, 2> data_processor::get_cur_ball_transition() {
     std::array<double, 2> transition;
     if (this->is_first_frame_received == false) {
         transition = {0, 0};
-        this->is_first_frame_received = true;
     } else {
         const std::array<double, 2> cur_ball = this->get_ball_position(this->cur_frame);
         const std::array<double, 2> prev_ball = this->get_ball_position(this->prev_frame);
         transition = {cur_ball[0] - prev_ball[0], cur_ball[1] - prev_ball[1]};
     }
-
-    this->prev_frame = this->cur_frame;
 
     if (this->is_debug) {
         std::cout << __func__ << ": transition (x, y) " << transition[0] << " " << transition[1] << std::endl;
