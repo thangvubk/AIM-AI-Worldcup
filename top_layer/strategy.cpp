@@ -79,13 +79,16 @@ std::array<double, 2> strategy::attack(std::size_t id, std::size_t closest_id, s
 
     if (cur_ball[0] > -0.1){ // little margin
         double ox = 0.2;
+		double oy = 0.2;
         std::array<double, 2> cur_trans = this->data_proc->get_cur_ball_transition();
         std::array<double, 2> goal_pstn = {1.1 + 0.75, 0}; // middle point of the net
         std::array<double, 3> tar_posture = this->cal->compute_desired_posture(cur_ball, cur_trans, goal_pstn);
-        if(my_posture[0] < cur_ball[0] && my_posture[0] > cur_ball[0] - ox){
+        //if(my_posture[0] < cur_ball[0] && my_posture[0] > cur_ball[0] - ox &&
+        //   std::abs(my_posture[1] - cur_ball[1]) < oy){
+        if (this->cal->is_desired_posture(my_posture, tar_posture) == true) {
             wheel_velos = this->motors[id]->move_to_target(my_posture, goal_pstn, 0);
         } else{
-            wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, tar_posture);
+            wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, tar_posture, 0.35);
         }
     }else {
         wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, default_posture);
