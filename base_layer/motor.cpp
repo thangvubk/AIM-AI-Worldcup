@@ -128,8 +128,27 @@ std::array<double, 2> motor::three_phase_move_to_target(std::array<double, 3> cu
     const std::array<double, 2> target = {tar_posture[0], tar_posture[1]};
     const std::array<double, 2> current = {cur_posture[0], cur_posture[1]};
 
+
+    double th_to_target = this->cal->compute_theta_to_target(cur_posture, target);
+    // reset phase if current time theta_to_target is high and the distance is far
+    const double reset_th = calculator::PI/3;
+    const double reset_dist = 0.3;
+    if (th_to_target > calculator::PI/3 && this->cal->get_distance(current, target) > reset_dist){
+        if (this-> is_debug){
+            std::cout << __func__ << ": phase is reset" << std::endl;
+        }
+        this->cur_phase = 0;
+    }
+
     // FSM for 3-phase movement
     if (this->cur_phase == 0) { // phase1: spin by static theta
+
+        // return if distance is to small
+        if (this->cal->get_distance(current, target) <= calculator::DIST_TOLERANCE){
+            this->cur_phase = 2;
+            return {0, 0};
+        }
+
         const double static_th = this->cal->compute_static_theta(current, target);
 
         if (this->is_debug) {
@@ -180,8 +199,8 @@ std::array<double, 2> motor::three_phase_move_to_target(std::array<double, 3> cu
             }
             wheel_velos = this->spin_to_theta(cur_th, tar_th);
         } else {
+            this->cur_phase = 0;
             if (this->is_debug) {
-                this->cur_phase = 0;
                 std::cout << this->name << " " << __func__ << ": Finish 3 phase movement, reset" << std::endl;
             }
         }

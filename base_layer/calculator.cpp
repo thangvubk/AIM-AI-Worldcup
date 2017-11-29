@@ -132,14 +132,17 @@ double calculator::compute_theta_to_target(const std::array<double, 3> cur_postu
     return d_th;
 }
 
-std::array<double, 3> calculator::compute_desired_posture(std::array<double, 2> ball_pstn, std::array<double, 2> goal_pstn){
+std::array<double, 3> calculator::compute_desired_posture(std::array<double, 2> ball_pstn,
+                                                          std::array<double, 2> cur_trans,
+                                                          std::array<double, 2> goal_pstn){
+    const std::size_t num_of_predicted_frames = 10;
     const double pad = 0.1; //the target for player is a litte bit behind the ball
 
     const double static_th = this->compute_static_theta(ball_pstn, goal_pstn);
 
     // Compute desired posture
-    const double x = ball_pstn[0] - pad*std::cos(static_th); 
-    const double y = ball_pstn[1] - pad*std::sin(static_th);
+    const double x = ball_pstn[0] - pad*std::cos(static_th) + cur_trans[0]*num_of_predicted_frames; 
+    const double y = ball_pstn[1] - pad*std::sin(static_th) + cur_trans[1]*num_of_predicted_frames;
     const double th = static_th;
 
     return {x, y, th};
@@ -154,6 +157,7 @@ std::array<double, 3> calculator::compute_desired_posture(std::array<double, 2> 
     return: true if similar else false
 */
 bool calculator::is_desired_posture(std::array<double, 3> cur_posture, std::array<double, 3> tar_posture){
+    //const double pad = 0.1;
     if (this->get_distance(cur_posture, tar_posture) < calculator::DIST_TOLERANCE &&
         this->theta_equal_with_tolerance(cur_posture[2], tar_posture[2], calculator::TH_TOLERANCE) == true){
         return true;

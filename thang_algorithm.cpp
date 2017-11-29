@@ -10,6 +10,7 @@
 #include "base_layer/motor.hpp"
 #include "base_layer/calculator.hpp"
 #include "data_processor/data_processor.hpp"
+#include "top_layer/strategy.hpp"
 
 class aim_ai : public aiwc::ai_base {
     static constexpr double PI = 3.1415926535;
@@ -21,9 +22,8 @@ public:
         , robot_wheels{}
     {
         this->is_debug = is_debug;
-		mt = new aim::motor("motor 1", true);
-		cal = new aim::calculator(false);
-        data_proc = new aim::data_processor(true);
+        data_proc = new aim::data_processor(false);
+        strat = new aim::strategy(data_proc, false);
 		if (is_debug) {
 			std::cout << "I am ready." << std::endl;
 		}
@@ -97,31 +97,12 @@ private:
             
 
 			// Get infos
-			this->our_postures = data_proc->get_my_team_postures(f);
-			this->opnt_postures = data_proc->get_opponent_postures(f);
-            this->cur_ball = data_proc->get_cur_ball_position(f);
-
-
-
+			this->data_proc->update_cur_frame(f);
             /*****************************************
              * OUR ALGORITHM HERE
              ****************************************/
 
-            std::array<double, 2> wheel_velos;
-            //std::array<double, 3> tar_posture = {-0.3, 0.7, 0};
-            std::array<double, 3> tar_posture = this->cal->compute_desired_posture(this->cur_ball, {1.1, 0});
-
-            std::cout << "tar posture " << tar_posture[0] << " " << tar_posture[1] << " " << tar_posture[2] << " " << std::endl;
-
-            if(this->cal->is_desired_posture(this->our_postures[1], tar_posture) == false){
-                wheel_velos = mt->three_phase_move_to_target(this->our_postures[1], tar_posture);
-            }else{
-                wheel_velos = mt->move_to_target(this->our_postures[1], {1.1 , 0}, 0);
-            }
-            robot_wheels[1] = wheel_velos;
-            //std::cout << this->count << "theta " << this->our_postures[1][TH] << std::endl;
-
-            
+            robot_wheels = this->strat->perform();
 
 
             /*****************************************
@@ -188,11 +169,10 @@ private: // member variable
 
     std::vector<aiwc::frame> frames;
 
-    // thangvu
+
 	bool is_debug = true;
-    aim::motor *mt;
-	aim::calculator *cal;
     aim::data_processor *data_proc;
+    aim::strategy *strat;
 
 };
 

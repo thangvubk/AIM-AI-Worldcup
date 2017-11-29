@@ -38,6 +38,7 @@ public:
                                    const std::array<double, 2> target);
 
 	std::array<double, 3> compute_desired_posture(std::array<double, 2> ball_pstn,
+                                                  std::array<double, 2> cur_trans,
                                                   std::array<double, 2> goal_pstn);
 
     bool is_desired_posture(std::array<double, 3> cur_posture, 
