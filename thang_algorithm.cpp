@@ -82,16 +82,16 @@ private:
             return;
         }
 
-        if (f.opt_coordinates) { // if the optional coordinates are given,
-            // const auto& myteam   = f.opt_coordinates->robots[MYTEAM];
-            // const auto& opponent = f.opt_coordinates->robots[OPPONENT];
-            // const auto& ball     = f.opt_coordinates->ball;
+		if (f.opt_coordinates) { // if the optional coordinates are given,
+			// const auto& myteam   = f.opt_coordinates->robots[MYTEAM];
+			// const auto& opponent = f.opt_coordinates->robots[OPPONENT];
+			// const auto& ball     = f.opt_coordinates->ball;
 
-            // const auto& myteam0_x      = (*f.opt_coordinates).robots[MYTEAM][0].x;
-            // const auto& myteam0_y      = (*f.opt_coordinates).robots[MYTEAM][0].y;
-            // const auto& myteam0_th     = (*f.opt_coordinates).robots[MYTEAM][0].th;
-            // const auto& myteam0_active = (*f.opt_coordinates).robots[MYTEAM][0].is_active;
-            
+			// const auto& myteam0_x      = (*f.opt_coordinates).robots[MYTEAM][0].x;
+			// const auto& myteam0_y      = (*f.opt_coordinates).robots[MYTEAM][0].y;
+			// const auto& myteam0_th     = (*f.opt_coordinates).robots[MYTEAM][0].th;
+			// const auto& myteam0_active = (*f.opt_coordinates).robots[MYTEAM][0].is_active;
+
 
 			// Get infos
 			this->our_postures = this->get_my_team_postures(f);
@@ -99,19 +99,58 @@ private:
 
 
 
-            /*****************************************
-             * OUR ALGORITHM HERE
-             ****************************************/
+			/*****************************************
+			 * OUR ALGORITHM HERE
+			 ****************************************/
 
-            std::array<double, 2> wheel_velos;
-            std::array<double, 3> tar_posture = {0, -0.4, PI/3};
-            
-            wheel_velos = layer->three_phase_move_to_target(this->our_postures[1], tar_posture);
-            robot_wheels[1] = wheel_velos;
-            std::cout << this->count << "theta " << this->our_postures[1][TH] << std::endl;
+			std::array<double, 2> wheel_velos;
+			std::array<double, 3> tar_posture = { 0, -0.4, PI / 3 };
 
-            
+			wheel_velos = layer->three_phase_move_to_target(this->our_postures[0], tar_posture);
+			robot_wheels[0] = wheel_velos;
 
+			std::array<double, 3> initial_posture = { 0, 0, 0 };
+			std::array<double, 3> our_0;
+			//std::array<double, 3> our_1;
+			std::array<double, 3> oppn_0;
+			std::array<double, 3> oppn_1;
+			std::array<double, 3> oppn_2;
+			std::array<double, 3> oppn_3;
+			std::array<double, 3> oppn_4;
+
+			if (f.time != 0.00) {
+				previous_frame = frames.back();
+				this->prev_our_postures = this->get_my_team_postures(previous_frame);
+				this->prev_oppn_postures = this->get_opponent_postures(previous_frame);
+			}
+
+			// code by jykim
+			if (f.time == 0.00) {
+				our_0 = layer->get_velocity(this->our_postures[0], initial_posture);
+				//our_1 = layer->get_velocity(this->our_postures[1], initial_posture);
+				oppn_0 = layer->get_velocity(this->opnt_postures[0], initial_posture);
+				oppn_1 = layer->get_velocity(this->opnt_postures[1], initial_posture);
+				oppn_2 = layer->get_velocity(this->opnt_postures[2], initial_posture);
+				oppn_3 = layer->get_velocity(this->opnt_postures[3], initial_posture);
+				oppn_4 = layer->get_velocity(this->opnt_postures[4], initial_posture);
+			}
+			else {
+				our_0 = layer->get_velocity(this->our_postures[0], this->prev_our_postures[0]);
+				//our_1 = layer->get_velocity(this->our_postures[1], this->prev_our_postures[1]);
+				oppn_0 = layer->get_velocity(this->opnt_postures[0], this->prev_oppn_postures[0]);
+				oppn_1 = layer->get_velocity(this->opnt_postures[1], this->prev_oppn_postures[1]);
+				oppn_2 = layer->get_velocity(this->opnt_postures[2], this->prev_oppn_postures[2]);
+				oppn_3 = layer->get_velocity(this->opnt_postures[3], this->prev_oppn_postures[3]);
+				oppn_4 = layer->get_velocity(this->opnt_postures[4], this->prev_oppn_postures[4]);
+			}
+
+			std::array<double, 2> avoid_point;
+
+			avoid_point = layer->get_avoid_point(this->our_postures[0], { 1, 0 }, this->opnt_postures, { oppn_0, oppn_1, oppn_2, oppn_3, oppn_4 });
+
+			std::cout << "x : " << avoid_point[0] << "    y : " << avoid_point[1] << std::endl;
+
+			frames.push_back(f);
 
             /*****************************************
              * FINISH OUR ALGORITHM
@@ -167,6 +206,8 @@ private: // member variable
     std::array<std::array<double, 3>, 5> our_postures;
 	std::array<std::array<double, 3>, 5> opnt_postures;
 	
+	std::array<std::array<double, 3>, 5> prev_our_postures;//jykim
+	std::array<std::array<double, 3>, 5> prev_oppn_postures; //jykim
 
     std::array<double, 2> prev_ball;
     std::array<double, 2> cur_ball;

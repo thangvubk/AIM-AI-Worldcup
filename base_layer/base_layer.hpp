@@ -30,6 +30,15 @@ public:
     double get_distance(const std::array<double, 3> cur_posture, 
                         const std::array<double, 3> tar_posture);
 
+	std::array<double, 3> get_velocity(const std::array<double, 3> curr_posture, const std::array<double, 3> past_posture);
+
+	double get_bivariate_normal_pdf(const std::array<double, 2> x, const std::array<double, 2> mean, const std::array<double, 2> sigma);
+
+	std::array<double, 2> get_avoid_point(const std::array<double, 3> curr_posture, const std::array<double, 2> tar_dest, const std::array<double, 3> oppn_posture, const std::array<double, 3> oppn_vel);
+
+	std::array<double, 2> get_avoid_point(const std::array<double, 3> curr_posture, const std::array<double, 2> tar_dest,
+		const std::array<std::array<double, 3>, 5> opnt_posture, const std::array<std::array<double, 3>, 5> opnt_vel);
+
     double compute_static_theta(const std::array<double, 2> current, 
                                 const std::array<double, 2> target);
 

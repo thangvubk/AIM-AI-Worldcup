@@ -1,5 +1,7 @@
 #include <iostream>
 #include <array>
+#include <random>
+#include <valarray>
 
 #include "base_layer.hpp"
 
@@ -60,6 +62,153 @@ double base_layer::get_distance(const std::array<double, 3> cur_posture, const s
     const std::array<double, 2> current = {cur_posture[0], cur_posture[1]};
     return this->get_distance(current, target);
 }
+
+// code by jykim
+std::array<double, 3> base_layer::get_velocity(const std::array<double, 3> curr_posture, const std::array<double, 3> past_posture) {
+	std::array<double, 3> velocity;
+
+	const double dt = 0.05;
+	const double x_curr = curr_posture[0];
+	const double y_curr = curr_posture[1];
+	const double x_past = past_posture[0];
+	const double y_past = past_posture[1];
+	const double x_vel = (x_curr - x_past) / dt;
+	const double y_vel = (y_curr - y_past) / dt;
+
+	velocity = { x_vel, y_vel, std::sqrt(x_vel*x_vel + y_vel * y_vel) };
+	return velocity;
+}
+
+double base_layer::get_bivariate_normal_pdf(const std::array<double, 2> x, const std::array<double, 2> mean, const std::array<double, 2> sigma) {
+	return 1 / (2 * base_layer::PI * sigma[0] * sigma[1]) * std::exp(-0.5 * ((x[0] - mean[0])*(x[0] - mean[0])/(sigma[0] * sigma[0]) + (x[1] - mean[1])*(x[1] - mean[1])/(sigma[1] * sigma[1])));
+}
+
+std::array<double, 2> base_layer::get_avoid_point(const std::array<double, 3> curr_posture, const std::array<double, 2> tar_dest, const std::array<double, 3> oppn_posture, const std::array<double, 3> oppn_vel) {
+	const double dt = 0.05; // time between adjacent frames
+	const double threshold = 0.05;
+	const std::array<double, 2> sigma = { 0.2, 0.2 };
+	
+	const std::array<double, 2> pred_oppn_next_posture = { oppn_posture[0] + oppn_vel[0] * dt, oppn_posture[1] + oppn_vel[1] * dt };
+
+	const double dx = tar_dest[0] - curr_posture[0];
+	const double dy = tar_dest[1] - curr_posture[1];
+	
+	std::array<double, 50> path_potential;
+
+	for (double i = 1.0; i < 51.0; i++) {
+		path_potential[i - 1] = get_bivariate_normal_pdf({ curr_posture[0] + i * dx / 51.0, curr_posture[1] + i * dy / 51.0 }, pred_oppn_next_posture, sigma);
+		if (path_potential[i - 1] > 1) {
+		}
+	}
+	double max = -1.0;
+	int max_index;
+	for (int i = 0; i < 50; i++) {
+		if (path_potential[i] > max) {
+			max = path_potential[i];
+			max_index = i;
+		}
+	}
+	std::cout << "max is    " << max << "      max index is     " << max_index << std::endl;
+
+	std::array<double, 50> normal_potential;
+	if (max < threshold) {
+		return { -100, -100 };
+	} else {
+		for (int i = -25; i < 25; i++) {
+			normal_potential[i + 25] = get_bivariate_normal_pdf({ curr_posture[0] + max_index * dx / 51.0 + i * dy / 51.0, curr_posture[1] + max_index * dy / 51.0 - i * dx / 51.0 }, pred_oppn_next_posture, sigma);
+		}
+	}
+	double max_normal = -1;
+	int max_index_normal = -1;
+	for (int i = 0; i < 50; i++) {
+		if ((normal_potential[i] > max_normal) && (normal_potential[i] < threshold)) {
+			max_normal = normal_potential[i];
+			max_index_normal = i;
+		}
+	}
+	if (max_index_normal == -1) {
+		return { -1.3, 0 };
+	}
+	else {
+		return { curr_posture[0] + max_index * dx / 51.0 + max_index_normal * dy / 51.0, curr_posture[1] + max_index * dy / 51.0 - max_index_normal * dx / 51.0 };
+	}
+}
+
+std::array<double, 2> base_layer::get_avoid_point(const std::array<double, 3> curr_posture, const std::array<double, 2> tar_dest,
+	const std::array<std::array<double, 3>, 5> opnt_posture, const std::array<std::array<double, 3>, 5> opnt_vel) {
+	const double dt = 0.05; // time between adjacent frames
+	const double threshold = 0.05;
+	const double sigma = 0.2;
+	//const std::array<double, 2> sigma_0 = { sigma * std::abs(opnt_vel[0][0]), sigma * std::abs(opnt_vel[0][1]) };
+	//const std::array<double, 2> sigma_1 = { sigma * std::abs(opnt_vel[1][0]), sigma * std::abs(opnt_vel[1][1]) };
+	//const std::array<double, 2> sigma_2 = { sigma * std::abs(opnt_vel[2][0]), sigma * std::abs(opnt_vel[2][1]) };
+	//const std::array<double, 2> sigma_3 = { sigma * std::abs(opnt_vel[3][0]), sigma * std::abs(opnt_vel[3][1]) };
+	//const std::array<double, 2> sigma_4 = { sigma * std::abs(opnt_vel[4][0]), sigma * std::abs(opnt_vel[4][1]) };
+	const std::array<double, 2> sigma_0 = { 0.2, 0.2 };
+	const std::array<double, 2> sigma_1 = { 0.2, 0.2 };
+	const std::array<double, 2> sigma_2 = { 0.2, 0.2 };
+	const std::array<double, 2> sigma_3 = { 0.2, 0.2 };
+	const std::array<double, 2> sigma_4 = { 0.2, 0.2 };
+
+	const std::array<double, 2> mean_0 = { opnt_posture[0][0] + opnt_vel[0][0] * dt, opnt_posture[0][1] + opnt_vel[0][1] * dt };
+	const std::array<double, 2> mean_1 = { opnt_posture[1][0] + opnt_vel[1][0] * dt, opnt_posture[1][1] + opnt_vel[1][1] * dt };
+	const std::array<double, 2> mean_2 = { opnt_posture[2][0] + opnt_vel[2][0] * dt, opnt_posture[2][1] + opnt_vel[2][1] * dt };
+	const std::array<double, 2> mean_3 = { opnt_posture[3][0] + opnt_vel[3][0] * dt, opnt_posture[3][1] + opnt_vel[3][1] * dt };
+	const std::array<double, 2> mean_4 = { opnt_posture[4][0] + opnt_vel[4][0] * dt, opnt_posture[4][1] + opnt_vel[4][1] * dt };
+
+	const double dx = tar_dest[0] - curr_posture[0];
+	const double dy = tar_dest[1] - curr_posture[1];
+
+	std::array<double, 50> path_potential;
+
+	for (double i = 1.0; i < 51.0; i++) {
+		path_potential[i - 1] = 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + i * dx / 51.0, curr_posture[1] + i * dy / 51.0 }, mean_0, sigma_0)
+			+ 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + i * dx / 51.0, curr_posture[1] + i * dy / 51.0 }, mean_1, sigma_1)
+			+ 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + i * dx / 51.0, curr_posture[1] + i * dy / 51.0 }, mean_2, sigma_2)
+			+ 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + i * dx / 51.0, curr_posture[1] + i * dy / 51.0 }, mean_3, sigma_3)
+			+ 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + i * dx / 51.0, curr_posture[1] + i * dy / 51.0 }, mean_4, sigma_4); 
+	}
+
+	double max = -1.0;
+	int max_index = -1;
+	for (int i = 0; i < 50; i++) {
+		if (path_potential[i] > max) {
+			max = path_potential[i];
+			max_index = i;
+		}
+	}
+
+	std::array<double, 50> normal_potential;
+	if (max < threshold) {
+		return { -100, -100 };
+	}
+	else {
+		for (int i = -25; i < 25; i++) {
+			normal_potential[i + 25] = 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + max_index * dx / 51.0 + i * dy / 51.0, curr_posture[1] + max_index * dy / 51.0 - i * dx / 51.0 }, mean_0, sigma_0)
+				+ 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + max_index * dx / 51.0 + i * dy / 51.0, curr_posture[1] + max_index * dy / 51.0 - i * dx / 51.0 }, mean_1, sigma_1)
+				+ 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + max_index * dx / 51.0 + i * dy / 51.0, curr_posture[1] + max_index * dy / 51.0 - i * dx / 51.0 }, mean_2, sigma_2)
+				+ 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + max_index * dx / 51.0 + i * dy / 51.0, curr_posture[1] + max_index * dy / 51.0 - i * dx / 51.0 }, mean_3, sigma_3)
+				+ 0.2 * get_bivariate_normal_pdf({ curr_posture[0] + max_index * dx / 51.0 + i * dy / 51.0, curr_posture[1] + max_index * dy / 51.0 - i * dx / 51.0 }, mean_4, sigma_4);
+		}
+	}
+	double max_normal = -1;
+	int max_index_normal = -1;
+	for (int i = 0; i < 50; i++) {
+		if ((normal_potential[i] > max_normal) && (normal_potential[i] < threshold)) {
+			max_normal = normal_potential[i];
+			max_index_normal = i;
+		}
+	}
+	if (max_index_normal == -1) {
+		return { -1.3, 0 };
+	}
+	else {
+		return { curr_posture[0] + max_index * dx / 51.0 + max_index_normal * dy / 51.0, curr_posture[1] + max_index * dy / 51.0 - max_index_normal * dx / 51.0 };
+	}
+}
+
+
+
 
 /**
     compute static theta which base on coordinates only
