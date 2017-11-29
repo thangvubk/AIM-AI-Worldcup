@@ -64,18 +64,33 @@ std::array<double, 2> strategy::attack(std::size_t id, std::size_t closest_id, s
     std::array<double, 3> my_posture = our_postures[id];
     std::array<double, 2> cur_ball = this->data_proc->get_cur_ball_position();
 
-    if (id == closest_id) {
+    // if (id == closest_id) {
+    //     std::array<double, 2> cur_trans = this->data_proc->get_cur_ball_transition();
+    //     std::array<double, 2> goal_pstn = {1.1 + 0.75, 0}; // middle point of the net
+    //     std::array<double, 3> tar_posture = this->cal->compute_desired_posture(cur_ball, cur_trans, goal_pstn);
+    //     if (this->cal->is_desired_posture(my_posture, tar_posture) == false) {
+    //         wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, tar_posture);
+    //     } else {
+    //         wheel_velos = this->motors[id]->move_to_target(my_posture, goal_pstn, 0);
+    //     }
+    // } else {
+    //     wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, default_posture);
+    // }
+
+    if (cur_ball[0] > -0.1){ // little margin
+        double ox = 0.2;
         std::array<double, 2> cur_trans = this->data_proc->get_cur_ball_transition();
         std::array<double, 2> goal_pstn = {1.1 + 0.75, 0}; // middle point of the net
         std::array<double, 3> tar_posture = this->cal->compute_desired_posture(cur_ball, cur_trans, goal_pstn);
-        if (this->cal->is_desired_posture(my_posture, tar_posture) == false) {
-            wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, tar_posture);
-        } else {
+        if(my_posture[0] < cur_ball[0] && my_posture[0] > cur_ball[0] - ox){
             wheel_velos = this->motors[id]->move_to_target(my_posture, goal_pstn, 0);
+        } else{
+            wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, tar_posture);
         }
-    } else {
+    }else {
         wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, default_posture);
     }
+
     return wheel_velos;
 }
 
@@ -98,30 +113,49 @@ std::array<double, 2> strategy::defense(std::size_t id, std::size_t closest_id, 
     std::array<double, 3> my_posture = our_postures[id];
     std::array<double, 2> cur_ball = this->data_proc->get_cur_ball_position();
 
-    if (id == closest_id) {
+    // if (id == closest_id) {
+    //     std::array<double, 2> cur_trans = this->data_proc->get_cur_ball_transition();
+    //     std::array<double, 2> goal_pstn = {1.1 + 0.75, 0}; // middle point of the net
+    //     std::array<double, 3> tar_posture = this->cal->compute_desired_posture(cur_ball, cur_trans, goal_pstn);
+    //     if (this->cal->is_desired_posture(my_posture, tar_posture) == false) {
+    //         wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, tar_posture);
+    //     } else {
+    //         wheel_velos = this->motors[id]->move_to_target(my_posture, goal_pstn, 0);
+    //     }
+    // } else {
+    //     wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, default_posture);
+    // }
+
+    if (cur_ball[0] < -0.1){ // little margin
+        double ox = 0.05;
         std::array<double, 2> cur_trans = this->data_proc->get_cur_ball_transition();
         std::array<double, 2> goal_pstn = {1.1 + 0.75, 0}; // middle point of the net
         std::array<double, 3> tar_posture = this->cal->compute_desired_posture(cur_ball, cur_trans, goal_pstn);
-        if (this->cal->is_desired_posture(my_posture, tar_posture) == false) {
+        if(my_posture[0] < cur_ball[0] - ox){
+            wheel_velos = this->motors[id]->move_to_target(my_posture, cur_ball, 0.2); //0.2 damping
+        } else{
             wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, tar_posture);
-        } else {
-            wheel_velos = this->motors[id]->move_to_target(my_posture, goal_pstn, 0);
         }
-    } else {
+    }else {
         wheel_velos = this->motors[id]->three_phase_move_to_target(my_posture, default_posture);
     }
+
     return wheel_velos;
 }
 
 std::array<double, 2> strategy::upper_size_defense(std::size_t id, std::size_t closest_id) {
     // optimize default posture if needed
-    std::array<double, 3> default_posture = {-0.55, 0.45, 0};
+    std::array<double, 2> cur_ball = this->data_proc->get_cur_ball_position();
+    double y = std::max(0.0, cur_ball[1]);
+    std::array<double, 3> default_posture = {-0.55, y, 0};
     return this->defense(id, closest_id, default_posture);
 }
 
 std::array<double, 2> strategy::lower_size_defense(std::size_t id, std::size_t closest_id) {
     // optimize default posture if needed
-    std::array<double, 3> default_posture = {-0.55, -0.45, 0};
+    std::array<double, 2> cur_ball = this->data_proc->get_cur_ball_position();
+    double y = std::min(0.0, cur_ball[1]);
+    std::array<double, 3> default_posture = {-0.55, y, 0};
     return this->defense(id, closest_id, default_posture);
 }
 
@@ -137,7 +171,7 @@ std::array<double, 2> strategy::keep_goal(std::size_t id){
     const double y = std::max(std::min(cur_ball[1], GOAL_WIDTH/2 - ROBOT_SIZE/2),
                               -GOAL_WIDTH/2 + ROBOT_SIZE/2);
     if (cur_ball[0] < -FIELD_LENGTH/2 + PENALTY_AREA_DEPTH && std::abs(cur_ball[1]) < PENALTY_AREA_WIDTH/2){
-        wheel_velos =this->motors[id]->move_to_target(my_posture, cur_ball, 0.2);
+        wheel_velos =this->motors[id]->move_to_target(my_posture, cur_ball, 0.35);
     }else{
         wheel_velos = this->motors[id]->move_to_target(my_posture, {x, y});
     }

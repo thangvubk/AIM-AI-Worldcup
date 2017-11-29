@@ -97,11 +97,11 @@ private:
             
 
 			// Get infos
-			this->data_proc->update_cur_frame(f);
+			
             /*****************************************
              * OUR ALGORITHM HERE
              ****************************************/
-
+            this->data_proc->update_cur_frame(f);
             robot_wheels = this->strat->perform();
 
 
