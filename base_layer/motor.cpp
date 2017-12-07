@@ -133,7 +133,7 @@ std::array<double, 2> motor::three_phase_move_to_target(std::array<double, 3> cu
     // reset phase if current time theta_to_target is high and the distance is far
     const double reset_th = calculator::PI/3;
     const double reset_dist = 0.3;
-    if (th_to_target > calculator::PI/3 && this->cal->get_distance(current, target) > reset_dist){
+    if (std::abs(th_to_target) > calculator::PI/3 && this->cal->get_distance(current, target) > reset_dist){
         if (this-> is_debug){
             std::cout << __func__ << ": phase is reset" << std::endl;
         }

@@ -7,7 +7,7 @@ namespace aim {
 
 // Constants implementation
 const double calculator::PI = 3.1415926535;
-const double calculator::TH_TOLERANCE = 0.05; //radian
+const double calculator::TH_TOLERANCE = 0.1; //radian
 const double calculator::DIST_TOLERANCE = 0.05;
 
 calculator::calculator(bool is_debug) {
@@ -135,7 +135,7 @@ double calculator::compute_theta_to_target(const std::array<double, 3> cur_postu
 std::array<double, 3> calculator::compute_desired_posture(std::array<double, 2> ball_pstn,
                                                           std::array<double, 2> cur_trans,
                                                           std::array<double, 2> goal_pstn){
-    const std::size_t num_of_predicted_frames = 10;
+    const std::size_t num_of_predicted_frames = 1000000;
     const double pad = 0.1; //the target for player is a litte bit behind the ball
 
     const double static_th = this->compute_static_theta(ball_pstn, goal_pstn);
